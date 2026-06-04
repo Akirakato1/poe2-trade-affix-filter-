@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>POE2 Affix Filter</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header class="bar">
+        <strong>Affix Filter</strong>
+        <label class="toggle">
+          <input id="liveToggle" type="checkbox">
+          <span>Live</span>
+        </label>
+      </header>
+
+      <section class="section">
+        <div class="row">
+          <select id="profileSelect" title="Saved filters"></select>
+          <button id="prevProfile" title="Previous profile" type="button">&lt;</button>
+          <button id="nextProfile" title="Next profile" type="button">&gt;</button>
+        </div>
+        <div class="row buttons">
+          <button id="saveProfile" type="button">Save</button>
+          <button id="loadProfile" type="button">Load</button>
+          <button id="renameProfile" type="button">Rename</button>
+          <button id="deleteProfile" type="button">Delete</button>
+          <button id="resetFilter" type="button">Reset</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <label>
+          Item group
+          <select id="groupSelect"></select>
+        </label>
+        <label>
+          Item type
+          <select id="subtypeSelect"></select>
+        </label>
+      </section>
+
+      <section class="section">
+        <div class="row buttons">
+          <button id="addAndGroup" type="button">AND</button>
+          <button id="addNotGroup" type="button">NOT</button>
+          <button id="addCountGroup" type="button">COUNT</button>
+          <button id="runFilter" class="primary" type="button">Run Filter</button>
+        </div>
+      </section>
+
+      <section id="groups" class="groups"></section>
+
+      <footer id="status" class="status">Live filtering is off by default. Hotkey toggles Live.</footer>
+    </main>
+
+    <script src="shared/profile-store.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

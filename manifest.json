@@ -1,0 +1,52 @@
+{
+  "manifest_version": 2,
+  "name": "POE2 Trade Affix Filter",
+  "version": "0.1.0",
+  "description": "Highlight Path of Exile 2 trade results by explicit affix name and tier rules.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "https://www.pathofexile.com/trade2/*"
+  ],
+  "browser_action": {
+    "default_title": "POE2 Affix Filter",
+    "default_popup": "src/popup.html"
+  },
+  "background": {
+    "scripts": [
+      "src/shared/affix-text.js",
+      "src/shared/rule-engine.js",
+      "src/background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.pathofexile.com/trade2/*"
+      ],
+      "js": [
+        "src/shared/affix-text.js",
+        "src/shared/rule-engine.js",
+        "src/shared/trade-parser.js",
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-live-filter": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F"
+      },
+      "description": "Toggle POE2 affix live filtering"
+    }
+  },
+  "web_accessible_resources": [
+    "data/affixes.json"
+  ],
+  "applications": {
+    "gecko": {
+      "id": "poe2-trade-affix-filter@akirakato1.local"
+    }
+  }
+}

@@ -1,0 +1,103 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #15171b;
+  color: #f0ead8;
+  margin: 0;
+  min-width: 430px;
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+button,
+select {
+  background: #23262d;
+  border: 1px solid #555b68;
+  color: #f0ead8;
+  min-height: 28px;
+}
+
+button {
+  cursor: pointer;
+  padding: 3px 8px;
+}
+
+button.primary {
+  border-color: #d6a229;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+}
+
+.popup {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.bar,
+.row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.bar {
+  justify-content: space-between;
+}
+
+.toggle {
+  align-items: center;
+  display: flex;
+  grid-template-columns: auto;
+}
+
+.section,
+.group {
+  border: 1px solid #343944;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+}
+
+.buttons {
+  flex-wrap: wrap;
+}
+
+.groups {
+  display: grid;
+  gap: 8px;
+  max-height: 470px;
+  overflow: auto;
+}
+
+.group-header,
+.rule {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 84px 1fr 56px 56px 30px;
+}
+
+.group-header {
+  align-items: center;
+  grid-template-columns: 80px 48px 48px 1fr 30px;
+}
+
+.rule select {
+  min-width: 0;
+}
+
+.status {
+  color: #b9c0cc;
+  font-size: 12px;
+  line-height: 1.35;
+}
