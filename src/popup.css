@@ -201,7 +201,6 @@ label {
   gap: 8px;
 }
 
-.group-header,
 .rule {
   display: grid;
   gap: 6px;
@@ -210,7 +209,27 @@ label {
 
 .group-header {
   align-items: center;
-  grid-template-columns: 80px 48px 48px 1fr 30px;
+  display: flex;
+  gap: 6px;
+}
+
+.group-header select {
+  flex: 0 0 80px;
+  min-width: 0;
+}
+
+.group-header input {
+  flex: 0 0 48px;
+  min-width: 0;
+}
+
+.group-header [data-action="add-rule"] {
+  flex: 1 1 auto;
+  min-width: 86px;
+}
+
+.group-header [data-action="remove-group"] {
+  flex: 0 0 30px;
 }
 
 .rule select {

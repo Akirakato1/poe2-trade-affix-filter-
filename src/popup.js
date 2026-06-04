@@ -247,6 +247,16 @@
     subtypeSelect.replaceChildren(...entries.map((entry) => option(entry.key, entry.label, entry.key === itemType?.key)));
   }
 
+  function groupCountControlsHtml(group) {
+    if (group.type !== 'count') {
+      return '';
+    }
+
+    return `
+          <input data-action="group-min" type="number" min="0" value="${Number(group.min ?? 1)}" title="Count min">
+          <input data-action="group-max" type="number" min="0" value="${Number(group.max ?? 1)}" title="Count max">`;
+  }
+
   function renderGroups() {
     const container = root.document.getElementById('groups');
     const groups = currentFilter().groups || [];
@@ -271,16 +281,13 @@
             <option value="not">NOT</option>
             <option value="count">COUNT</option>
           </select>
-          <input data-action="group-min" type="number" min="0" value="${Number(group.min ?? 1)}" title="Count min">
-          <input data-action="group-max" type="number" min="0" value="${Number(group.max ?? 1)}" title="Count max">
+          ${groupCountControlsHtml(group)}
           <button data-action="add-rule" type="button">Add mod</button>
           <button data-action="remove-group" type="button" title="Remove group">x</button>
         </div>
         <div class="rules"></div>
       `;
       groupNode.querySelector('[data-action="group-type"]').value = group.type;
-      groupNode.querySelector('[data-action="group-min"]').disabled = group.type !== 'count';
-      groupNode.querySelector('[data-action="group-max"]').disabled = group.type !== 'count';
 
       const rules = groupNode.querySelector('.rules');
       for (const rule of group.rules || []) {
@@ -601,7 +608,16 @@
         mutateFilter((filter) => {
           const group = findGroup(filter, groupNode.dataset.groupId);
           if (!group) return;
-          if (action === 'group-type') group.type = event.target.value;
+          if (action === 'group-type') {
+            group.type = event.target.value;
+            if (group.type === 'count') {
+              group.min = Number(group.min ?? 1);
+              group.max = Number(group.max ?? 1);
+            } else {
+              delete group.min;
+              delete group.max;
+            }
+          }
           if (action === 'group-min') group.min = Number(event.target.value);
           if (action === 'group-max') group.max = Number(event.target.value);
         });
@@ -692,6 +708,7 @@
   }
 
   const api = {
+    groupCountControlsHtml,
     openShortcutSettings,
     renderHotkey,
     shortcutLabelForCommand,

@@ -66,6 +66,18 @@ test('popup saves and renames profiles without native browser prompts', async ()
   assert.doesNotMatch(source, /run-once-active-tab/);
 });
 
+test('group count controls render only for COUNT groups', () => {
+  assert.equal(popup.groupCountControlsHtml({ type: 'and', min: 2, max: 4 }), '');
+  assert.equal(popup.groupCountControlsHtml({ type: 'not', min: 2, max: 4 }), '');
+
+  const html = popup.groupCountControlsHtml({ type: 'count', min: 2, max: 4 });
+
+  assert.match(html, /data-action="group-min"/);
+  assert.match(html, /data-action="group-max"/);
+  assert.match(html, /value="2"/);
+  assert.match(html, /value="4"/);
+});
+
 test('shortcutLabelForCommand displays assigned and unset shortcuts', () => {
   assert.equal(
     popup.shortcutLabelForCommand([
