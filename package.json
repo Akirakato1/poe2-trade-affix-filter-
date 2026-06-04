@@ -1,0 +1,14 @@
+{
+  "name": "poe2-trade-affix-filter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Firefox extension that highlights Path of Exile 2 trade results by explicit affix tier rules.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check-extension.mjs",
+    "scrape:poe2db": "node scripts/scrape-poe2db.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
