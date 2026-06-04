@@ -179,6 +179,16 @@
     return text || fallbackSectionLabel(section);
   }
 
+  function firstNonEmptyString(...values) {
+    for (const value of values) {
+      const text = String(value || '').trim();
+      if (text) {
+        return text;
+      }
+    }
+    return '';
+  }
+
   function createAffixDataForPage(page, payload) {
     const affixes = [];
     let order = 0;
@@ -270,8 +280,45 @@
     };
   }
 
+  function compactAffixDatabase(database) {
+    return {
+      schemaVersion: 2,
+      generatedAt: String(database?.generatedAt || ''),
+      source: String(database?.source || ''),
+      navigation: (database?.navigation || []).map((group) => ({
+        group: String(group.group || ''),
+        entries: (group.entries || []).map((entry) => ({
+          key: String(entry.key || ''),
+          label: String(entry.label || ''),
+        })),
+      })),
+      itemTypes: (database?.itemTypes || []).map((itemType) => ({
+        key: String(itemType.key || ''),
+        group: String(itemType.group || ''),
+        label: String(itemType.label || ''),
+        tierGroups: (itemType.tierGroups || []).map((group) => ({
+          key: String(group.key || ''),
+          label: firstNonEmptyString(group.label, group.family, group.key),
+          generationType: normalizeGenerationType(group.generationType),
+          section: String(group.section || ''),
+          sectionLabel: String(group.sectionLabel || ''),
+          affixes: (group.affixes || []).map((affix) => ({
+            name: String(affix.name || '').trim(),
+            tier: Number(affix.tier || 0),
+          })),
+        })),
+      })),
+      failures: (database?.failures || []).map((failure) => ({
+        key: String(failure.key || ''),
+        url: String(failure.url || ''),
+        error: String(failure.error || ''),
+      })),
+    };
+  }
+
   const api = {
     BASE_URL,
+    compactAffixDatabase,
     createAffixDataForPage,
     extractModsViewPayload,
     parseModifierNavigation,

@@ -5,6 +5,7 @@ import poe2dbParser from '../src/shared/poe2db-parser.js';
 
 const {
   BASE_URL,
+  compactAffixDatabase,
   createAffixDataForPage,
   extractModsViewPayload,
   parseModifierNavigation,
@@ -56,20 +57,23 @@ async function scrape() {
     }
   }
 
-  const data = {
-    schemaVersion: 1,
+  const data = compactAffixDatabase({
     generatedAt: new Date().toISOString(),
     source: MODIFIERS_URL,
     navigation: groups,
     itemTypes,
     failures,
-  };
+  });
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
-  await writeFile(OUTPUT_PATH, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+  await writeFile(OUTPUT_PATH, `${JSON.stringify(data)}\n`, 'utf8');
 
+  const totalTierGroups = data.itemTypes.reduce((sum, itemType) => sum + itemType.tierGroups.length, 0);
+  const totalAffixes = data.itemTypes.reduce((sum, itemType) => (
+    sum + itemType.tierGroups.reduce((groupSum, group) => groupSum + group.affixes.length, 0)
+  ), 0);
   console.log(`wrote ${OUTPUT_PATH}`);
-  console.log(`itemTypes=${itemTypes.length} failures=${failures.length}`);
+  console.log(`itemTypes=${data.itemTypes.length} tierGroups=${totalTierGroups} affixes=${totalAffixes} failures=${failures.length}`);
 }
 
 scrape().catch((error) => {

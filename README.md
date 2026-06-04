@@ -59,7 +59,7 @@ Saved filters are stored in Firefox extension storage.
 
 ## Update PoE2DB Data
 
-The extension ships a static affix snapshot in `data/affixes.json`.
+The extension ships a compact static affix snapshot in `data/affixes.json`. The shipped schema keeps only the fields used by the popup and rule engine: navigation labels, item type labels, tier group labels/sections, generation type, and each affix name/tier pair.
 
 Regenerate it after league modifier changes:
 
@@ -67,7 +67,7 @@ Regenerate it after league modifier changes:
 npm run scrape:poe2db
 ```
 
-The scraper starts from `https://poe2db.tw/us/Modifiers`, follows every modifier page in the navigation, extracts each page's `ModsView` payload, and computes tier groups with `T1` as the highest required-level tier.
+The scraper starts from `https://poe2db.tw/us/Modifiers`, follows every modifier page in the navigation, extracts each page's `ModsView` payload, computes tier groups with `T1` as the highest required-level tier, then writes the compact runtime schema.
 
 ## Development
 
