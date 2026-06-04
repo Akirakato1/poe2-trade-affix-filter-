@@ -7,7 +7,11 @@ body {
   background: #15171b;
   color: #f0ead8;
   margin: 0;
+  max-height: 920px;
   min-width: 430px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 520px;
 }
 
 button,
@@ -39,6 +43,7 @@ label {
 }
 
 .popup {
+  box-sizing: border-box;
   display: grid;
   gap: 8px;
   padding: 10px;
@@ -53,6 +58,22 @@ label {
 
 .bar {
   justify-content: space-between;
+}
+
+.header-actions {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.hotkey {
+  color: #d6a229;
+  font-size: 12px;
+  line-height: 1;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toggle {
@@ -74,10 +95,9 @@ label {
 }
 
 .groups {
+  align-content: start;
   display: grid;
   gap: 8px;
-  max-height: 470px;
-  overflow: auto;
 }
 
 .group-header,

@@ -9,10 +9,15 @@
     <main class="popup">
       <header class="bar">
         <strong>Affix Filter</strong>
-        <label class="toggle">
-          <input id="liveToggle" type="checkbox">
-          <span>Live</span>
-        </label>
+        <div class="header-actions">
+          <button id="hotkeySettings" class="hotkey" title="Change live-filter shortcut" type="button">
+            <span id="hotkeyLabel">...</span>
+          </button>
+          <label class="toggle">
+            <input id="liveToggle" type="checkbox">
+            <span>Live</span>
+          </label>
+        </div>
       </header>
 
       <section class="section">

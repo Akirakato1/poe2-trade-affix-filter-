@@ -2,15 +2,59 @@
   'use strict';
 
   const MESSAGE_PREFIX = 'poe2-affix-filter';
+  const TOGGLE_COMMAND = 'toggle-live-filter';
+  const UNSET_SHORTCUT_LABEL = 'Not set';
   const store = root.Poe2ProfileStore;
   const modOptions = root.Poe2ModOptions;
   const state = {
     database: null,
-    storage: store.normalizeState({}),
+    storage: store?.normalizeState ? store.normalizeState({}) : {},
   };
 
   function browserApi() {
     return root.browser || root.chrome;
+  }
+
+  function shortcutLabelForCommand(commands, commandName = TOGGLE_COMMAND) {
+    const command = (commands || []).find((entry) => entry?.name === commandName);
+    const shortcut = String(command?.shortcut || '').trim();
+    return shortcut || UNSET_SHORTCUT_LABEL;
+  }
+
+  async function browserCommandList(api = browserApi()) {
+    if (!api?.commands?.getAll) {
+      return [];
+    }
+
+    if (api === root.chrome) {
+      return new Promise((resolve) => {
+        api.commands.getAll((commands) => resolve(commands || []));
+      });
+    }
+
+    return api.commands.getAll();
+  }
+
+  async function renderHotkey() {
+    const label = root.document?.getElementById?.('hotkeyLabel');
+    if (!label) {
+      return;
+    }
+
+    try {
+      label.textContent = shortcutLabelForCommand(await browserCommandList(), TOGGLE_COMMAND);
+    } catch (_error) {
+      label.textContent = UNSET_SHORTCUT_LABEL;
+    }
+  }
+
+  async function openShortcutSettings() {
+    const api = browserApi();
+    if (api?.commands?.openShortcutSettings) {
+      await api.commands.openShortcutSettings();
+      return true;
+    }
+    return false;
   }
 
   function id() {
@@ -230,6 +274,14 @@
       setStatus(state.storage.liveEnabled ? `Live on. Evaluated ${stats?.total || 0} entries.` : 'Live off. Borders cleared.');
     });
 
+    root.document.getElementById('hotkeySettings').addEventListener('click', async () => {
+      if (await openShortcutSettings()) {
+        await renderHotkey();
+      } else {
+        setStatus('Shortcut settings are unavailable in this browser.');
+      }
+    });
+
     root.document.getElementById('runFilter').addEventListener('click', async () => {
       await persist();
       const stats = await sendBackground('run-once-active-tab');
@@ -412,5 +464,16 @@
     loadInitialState().catch((error) => {
       setStatus(error.message);
     });
+    renderHotkey();
+  }
+
+  const api = {
+    openShortcutSettings,
+    renderHotkey,
+    shortcutLabelForCommand,
+  };
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
   }
 })(typeof globalThis !== 'undefined' ? globalThis : window);

@@ -24,10 +24,11 @@ Click the toolbar icon to open the filter UI.
 - Pick prefix/suffix, mod family, and inclusive min/max tier for each rule.
 - Click `Run Filter` for a one-time pass.
 - Toggle `Live` to evaluate current and newly appearing live-search entries.
+- Use the hotkey button in the popup header to view the current Live shortcut and open Firefox's extension shortcut settings.
 
-Passing entries receive a gold border. Failing entries receive a red border. With no configured filter, the extension applies no borders.
+Passing entries and item icons receive a gold border. Failing entries and item icons receive a red border. With no configured filter, the extension applies no borders.
 
-Live filtering is off by default. The default hotkey `Ctrl+Shift+F` toggles Live. Firefox can change extension shortcuts from its add-ons shortcut settings.
+Live filtering is off by default. The default hotkey `Ctrl+Shift+F` toggles Live. Firefox can change extension shortcuts from its add-ons shortcut settings, and the popup header provides a shortcut to that page.
 
 ## Rule Logic
 

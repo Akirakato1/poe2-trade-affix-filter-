@@ -5,6 +5,17 @@
     pass: 'poe2-affix-filter-pass',
     fail: 'poe2-affix-filter-fail',
   };
+  const ICON_CLASS = 'poe2-affix-filter-icon';
+  const ITEM_ICON_SELECTOR = [
+    '.left .icon',
+    '.left .itembox .icon',
+    '.left .itembox img',
+    '.left img.item-icon',
+    '.left .item-icon img',
+    '.left .item-icon',
+    '.itembox img',
+    'img.item-icon',
+  ].join(', ');
   const MESSAGE_PREFIX = 'poe2-affix-filter';
   const STYLE_ID = 'poe2-affix-filter-style';
 
@@ -61,12 +72,31 @@
         outline: 3px solid #b54444 !important;
         box-shadow: 0 0 0 2px rgba(181, 68, 68, 0.28) !important;
       }
+      .${ICON_CLASS}.${BORDER_CLASSES.pass} {
+        outline: 2px solid #d6a229 !important;
+        box-shadow:
+          inset 0 0 0 3px rgba(214, 162, 41, 0.9),
+          0 0 0 2px rgba(214, 162, 41, 0.35) !important;
+      }
+      .${ICON_CLASS}.${BORDER_CLASSES.fail} {
+        outline: 2px solid #b54444 !important;
+        box-shadow:
+          inset 0 0 0 3px rgba(181, 68, 68, 0.9),
+          0 0 0 2px rgba(181, 68, 68, 0.28) !important;
+      }
     `;
     root.document.documentElement.appendChild(style);
   }
 
   function clearRow(row) {
     row.classList.remove(BORDER_CLASSES.pass, BORDER_CLASSES.fail);
+    for (const icon of itemIcons(row)) {
+      icon.classList.remove(ICON_CLASS, BORDER_CLASSES.pass, BORDER_CLASSES.fail);
+    }
+  }
+
+  function itemIcons(row) {
+    return [...(row?.querySelectorAll?.(ITEM_ICON_SELECTOR) || [])];
   }
 
   function applyStatus(row, status) {
@@ -74,6 +104,9 @@
     const className = classForEvaluation(status);
     if (className) {
       row.classList.add(className);
+      for (const icon of itemIcons(row)) {
+        icon.classList.add(ICON_CLASS, className);
+      }
     }
   }
 
@@ -182,7 +215,11 @@
       return state.lastStats;
     }
 
-    const target = root.document.querySelector('.resultset') || root.document.body;
+    const target = root.document.body || root.document.querySelector('.resultset');
+    if (!target) {
+      return state.lastStats;
+    }
+
     state.observer = new root.MutationObserver(() => {
       runFilterOnce();
     });
@@ -240,6 +277,8 @@
 
   const api = {
     BORDER_CLASSES,
+    ICON_CLASS,
+    ITEM_ICON_SELECTOR,
     MESSAGE_PREFIX,
     applyStatus,
     classForEvaluation,
