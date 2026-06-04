@@ -18,17 +18,27 @@ Temporary add-ons are removed when Firefox restarts. Load the manifest again aft
 
 Click the toolbar icon to open the filter UI.
 
+![Affix filter popup UI](screenshots/UI.png)
+
 - Choose an item group and item type from the bundled PoE2DB modifier navigation.
+- Paste a related trade link into the `Trade link` field. Empty trade links start in edit mode; saved valid Path of Exile 2 trade links become clickable.
 - Add one or more top-level groups.
 - Add mod rules inside each group.
 - Pick prefix/suffix, mod family, and inclusive min/max tier for each rule.
-- Click `Run Filter` for a one-time pass.
-- Toggle `Live` to evaluate current and newly appearing live-search entries.
-- Use the hotkey button in the popup header to view the current Live shortcut and open Firefox's extension shortcut settings.
+- Toggle `Live` to turn the filter on or off. When Live is on, the current results are filtered and the trade page keeps filtering as results change.
+- The hotkey hint at the top of the popup shows the current Live shortcut. Click it to open Firefox's extension shortcut settings and edit the hotkey.
+- Selecting a saved profile in the dropdown loads it immediately.
+- Use `New` to start a blank unsaved profile. It will not appear in the profile dropdown until you save it, and the in-progress filter remains stored while the popup is closed.
+- `Save` updates the selected saved profile immediately. When working on a new unsaved profile, it asks for a profile name inside the popup.
+- Use `Share` to copy the current profile, trade link, and mod configuration to the clipboard. Use `Import` to paste a shared profile string, save it, select it, and load it.
 
-Passing entries and item icons receive a gold border. Failing entries and item icons receive a red border. With no configured filter, the extension applies no borders.
+`Live` keeps the active rules running: while it is on, current entries and every entry added by live search or by loading more results are evaluated once and shown with a border result.
 
-Live filtering is off by default. The default hotkey `Ctrl+Shift+F` toggles Live. Firefox can change extension shortcuts from its add-ons shortcut settings, and the popup header provides a shortcut to that page.
+![Trade results with affix filter borders](screenshots/trade_filter.png)
+
+Passing entries and item icons receive a gold border. Failing entries and item icons receive a red border. The border is shown around both the trade result row and the item icon so the result is visible while scrolling. With no configured filter, the extension applies no borders.
+
+Live filtering is off by default. The default hotkey `Ctrl+Shift+F` toggles Live on and off. Firefox can change extension shortcuts from its add-ons shortcut settings, and clicking the hotkey hint at the top of the popup opens that settings page.
 
 ## Rule Logic
 
@@ -48,11 +58,13 @@ Hybrid trade rows are split by affix name before evaluation, so a displayed row 
 
 The popup supports:
 
-- `Reset`
+- `New`
 - `Save`
-- `Load`
+- `Share`
+- `Import`
 - `Rename`
 - `Delete`
+- profile dropdown auto-load on selection
 - previous/next profile navigation
 
 Saved filters are stored in Firefox extension storage.

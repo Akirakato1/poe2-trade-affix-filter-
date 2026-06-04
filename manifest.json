@@ -5,6 +5,7 @@
   "description": "Highlight Path of Exile 2 trade results by explicit affix name and tier rules.",
   "permissions": [
     "activeTab",
+    "clipboardWrite",
     "storage",
     "https://www.pathofexile.com/trade2/*"
   ],

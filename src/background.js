@@ -59,10 +59,6 @@
         return undefined;
       }
 
-      if (message.type === 'run-once-active-tab') {
-        return sendToActiveTab({ type: 'run-once' });
-      }
-
       if (message.type === 'set-live-active-tab') {
         return setLiveEnabled(message.enabled);
       }

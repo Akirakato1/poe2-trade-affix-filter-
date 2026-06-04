@@ -6,8 +6,12 @@ import profileStore from '../src/shared/profile-store.js';
 const {
   createEmptyFilter,
   deleteProfile,
+  exportProfileText,
+  importProfileText,
+  isValidTradeLink,
   loadProfile,
   navigateProfile,
+  normalizeState,
   renameProfile,
   saveProfile,
 } = profileStore;
@@ -39,22 +43,40 @@ test('createEmptyFilter returns a blank one-level filter', () => {
 });
 
 test('saveProfile creates or replaces a named profile', () => {
-  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter);
+  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
   assert.equal(state.profiles.length, 1);
   assert.equal(state.profiles[0].name, 'Dex body');
   assert.deepEqual(state.currentFilter, sampleFilter);
+  assert.equal(state.currentTradeLink, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
+  assert.equal(state.profiles[0].tradeLink, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
 
-  const replaced = saveProfile(state, 'Dex body', { ...sampleFilter, subtypeKey: 'Rings' });
+  const replaced = saveProfile(state, 'Dex body', { ...sampleFilter, subtypeKey: 'Rings' }, '');
   assert.equal(replaced.profiles.length, 1);
   assert.equal(replaced.profiles[0].filter.subtypeKey, 'Rings');
+  assert.equal(replaced.profiles[0].tradeLink, '');
 });
 
 test('loadProfile selects a saved filter by id', () => {
-  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter);
+  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
   const loaded = loadProfile(state, state.profiles[0].id);
 
   assert.equal(loaded.currentProfileId, state.profiles[0].id);
   assert.deepEqual(loaded.currentFilter, sampleFilter);
+  assert.equal(loaded.currentTradeLink, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
+});
+
+test('normalizeState preserves an unsaved working filter between popup opens', () => {
+  const state = normalizeState({
+    profiles: [],
+    currentProfileId: '',
+    currentFilter: sampleFilter,
+    currentTradeLink: 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123',
+  });
+
+  assert.equal(state.currentProfileId, '');
+  assert.equal(state.profiles.length, 0);
+  assert.deepEqual(state.currentFilter, sampleFilter);
+  assert.equal(state.currentTradeLink, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
 });
 
 test('renameProfile changes the profile name without changing the filter', () => {
@@ -66,12 +88,13 @@ test('renameProfile changes the profile name without changing the filter', () =>
 });
 
 test('deleteProfile removes a profile and clears current filter when deleting the active profile', () => {
-  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter);
+  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
   const deleted = deleteProfile(state, state.profiles[0].id);
 
   assert.equal(deleted.profiles.length, 0);
   assert.equal(deleted.currentProfileId, '');
   assert.deepEqual(deleted.currentFilter, createEmptyFilter());
+  assert.equal(deleted.currentTradeLink, '');
 });
 
 test('navigateProfile moves previous and next through saved profiles', () => {
@@ -84,4 +107,39 @@ test('navigateProfile moves previous and next through saved profiles', () => {
 
   const next = navigateProfile(previous, 1);
   assert.equal(next.currentFilter.subtypeKey, 'Three');
+});
+
+test('isValidTradeLink only accepts Path of Exile 2 trade links', () => {
+  assert.equal(isValidTradeLink('https://www.pathofexile.com/trade2/search/poe2/Standard/abc123'), true);
+  assert.equal(isValidTradeLink('https://www.pathofexile.com/trade/search/Standard/abc123'), false);
+  assert.equal(isValidTradeLink('https://example.com/trade2/search/poe2/Standard/abc123'), false);
+  assert.equal(isValidTradeLink(''), false);
+});
+
+test('exportProfileText and importProfileText round-trip filter config and trade link', () => {
+  const state = saveProfile(
+    { profiles: [] },
+    'Dex body',
+    sampleFilter,
+    'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123',
+  );
+  const text = exportProfileText(state);
+  assert.match(text, /^POE2_AFFIX_FILTER_PROFILE:/);
+
+  const imported = importProfileText({ profiles: [] }, text);
+  assert.equal(imported.profiles.length, 1);
+  assert.equal(imported.currentProfileId, imported.profiles[0].id);
+  assert.equal(imported.profiles[0].name, 'Dex body');
+  assert.deepEqual(imported.currentFilter, sampleFilter);
+  assert.equal(imported.currentTradeLink, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
+});
+
+test('importProfileText creates a unique selected profile when a name already exists', () => {
+  const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter, '');
+  const text = exportProfileText(state);
+  const imported = importProfileText(state, text);
+
+  assert.equal(imported.profiles.length, 2);
+  assert.equal(imported.profiles[1].name, 'Dex body 2');
+  assert.equal(imported.currentProfileId, imported.profiles[1].id);
 });

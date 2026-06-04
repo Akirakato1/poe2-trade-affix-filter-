@@ -9,6 +9,9 @@
   const state = {
     database: null,
     storage: store?.normalizeState ? store.normalizeState({}) : {},
+    tradeLinkEditing: true,
+    toastTimer: null,
+    profileNameMode: '',
   };
 
   function browserApi() {
@@ -81,6 +84,7 @@
       profiles: state.storage.profiles,
       currentProfileId: state.storage.currentProfileId,
       currentFilter: state.storage.currentFilter,
+      currentTradeLink: state.storage.currentTradeLink,
       liveEnabled: state.storage.liveEnabled,
     });
   }
@@ -97,6 +101,89 @@
     root.document.getElementById('status').textContent = text;
   }
 
+  function setImportPanelVisible(visible) {
+    const panel = root.document.getElementById('importPanel');
+    panel.hidden = !visible;
+    if (visible) {
+      root.document.getElementById('importProfileText').focus();
+    }
+  }
+
+  function setProfileNamePanelVisible(visible) {
+    const panel = root.document.getElementById('profileNamePanel');
+    panel.hidden = !visible;
+    if (!visible) {
+      state.profileNameMode = '';
+      return;
+    }
+
+    const input = root.document.getElementById('profileNameInput');
+    input.focus();
+    input.select();
+  }
+
+  function showProfileNamePanel(mode) {
+    state.profileNameMode = mode;
+    const current = state.storage.profiles.find((profile) => profile.id === state.storage.currentProfileId);
+    const label = root.document.getElementById('profileNameLabel');
+    const input = root.document.getElementById('profileNameInput');
+    label.textContent = mode === 'rename' ? 'Rename profile' : 'Save profile as';
+    input.value = mode === 'rename' ? current?.name || '' : '';
+    root.document.getElementById('confirmProfileName').textContent = mode === 'rename' ? 'Rename' : 'Save';
+    setProfileNamePanelVisible(true);
+  }
+
+  async function saveCurrentProfileQuietly() {
+    const current = state.storage.profiles.find((profile) => profile.id === state.storage.currentProfileId);
+    if (!current) {
+      showProfileNamePanel('save');
+      return;
+    }
+
+    state.storage = store.saveProfile(state.storage, current.name, currentFilter(), state.storage.currentTradeLink);
+    await persist();
+    render();
+    showToast('Profile saved.');
+    setStatus('Profile saved.');
+  }
+
+  function showToast(text) {
+    const toast = root.document.getElementById('toast');
+    toast.textContent = text;
+    toast.hidden = false;
+    root.clearTimeout?.(state.toastTimer);
+    root.requestAnimationFrame?.(() => toast.classList.add('visible'));
+    if (!root.requestAnimationFrame) {
+      toast.classList.add('visible');
+    }
+    state.toastTimer = root.setTimeout?.(() => {
+      toast.classList.remove('visible');
+      root.setTimeout?.(() => {
+        toast.hidden = true;
+      }, 200);
+    }, 2000);
+  }
+
+  async function writeClipboardText(text) {
+    if (root.navigator?.clipboard?.writeText) {
+      await root.navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = root.document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    root.document.body.appendChild(textarea);
+    textarea.select();
+    const copied = root.document.execCommand?.('copy');
+    textarea.remove();
+    if (!copied) {
+      throw new Error('Clipboard is unavailable in this browser.');
+    }
+  }
+
   function option(value, label, selected) {
     const node = root.document.createElement('option');
     node.value = value;
@@ -107,10 +194,44 @@
 
   function renderProfiles() {
     const select = root.document.getElementById('profileSelect');
-    select.replaceChildren(option('', 'Unsaved filter', !state.storage.currentProfileId));
+    let hasSelection = false;
+    select.replaceChildren();
     for (const profile of state.storage.profiles) {
       select.appendChild(option(profile.id, profile.name, profile.id === state.storage.currentProfileId));
+      hasSelection = hasSelection || profile.id === state.storage.currentProfileId;
     }
+
+    if (!hasSelection) {
+      select.selectedIndex = -1;
+    }
+  }
+
+  function renderTradeLink() {
+    const input = root.document.getElementById('tradeLinkInput');
+    const anchor = root.document.getElementById('tradeLinkAnchor');
+    const toggle = root.document.getElementById('tradeLinkToggle');
+    const tradeLink = state.storage.currentTradeLink || '';
+    const editing = state.tradeLinkEditing || !tradeLink;
+    const valid = store.isValidTradeLink?.(tradeLink);
+
+    input.value = tradeLink;
+    input.readOnly = !editing;
+    toggle.textContent = editing ? '✓' : '✎';
+    toggle.title = editing ? 'Save trade link' : 'Edit trade link';
+    toggle.setAttribute('aria-label', toggle.title);
+
+    if (!editing && valid) {
+      anchor.href = tradeLink;
+      anchor.textContent = tradeLink;
+      anchor.hidden = false;
+      input.hidden = true;
+      return;
+    }
+
+    anchor.hidden = true;
+    anchor.removeAttribute('href');
+    anchor.textContent = '';
+    input.hidden = false;
   }
 
   function renderNavigation() {
@@ -217,6 +338,7 @@
   function render() {
     root.document.getElementById('liveToggle').checked = state.storage.liveEnabled;
     renderProfiles();
+    renderTradeLink();
     renderNavigation();
     renderGroups();
   }
@@ -225,7 +347,6 @@
     const filter = JSON.parse(JSON.stringify(currentFilter()));
     mutator(filter);
     state.storage.currentFilter = filter;
-    state.storage.currentProfileId = '';
     return persist().then(render);
   }
 
@@ -257,11 +378,12 @@
 
   async function loadInitialState() {
     state.database = await fetch(browserApi().runtime.getURL('data/affixes.json')).then((response) => response.json());
-    const stored = await browserApi().storage.local.get(['profiles', 'currentProfileId', 'currentFilter', 'liveEnabled']);
+    const stored = await browserApi().storage.local.get(['profiles', 'currentProfileId', 'currentFilter', 'currentTradeLink', 'liveEnabled']);
     state.storage = store.normalizeState(stored);
     if (!state.storage.currentFilter.subtypeKey && state.database.itemTypes[0]) {
       state.storage.currentFilter.subtypeKey = state.database.itemTypes[0].key;
     }
+    state.tradeLinkEditing = !state.storage.currentTradeLink;
     await persist();
     render();
   }
@@ -282,47 +404,147 @@
       }
     });
 
-    root.document.getElementById('runFilter').addEventListener('click', async () => {
-      await persist();
-      const stats = await sendBackground('run-once-active-tab');
-      setStatus(`Run complete. Pass ${stats?.passed || 0}, fail ${stats?.failed || 0}.`);
-    });
-
-    root.document.getElementById('resetFilter').addEventListener('click', async () => {
+    root.document.getElementById('newProfile').addEventListener('click', async () => {
       const subtypeKey = currentFilter().subtypeKey;
       state.storage.currentFilter = { ...store.createEmptyFilter(), subtypeKey };
       state.storage.currentProfileId = '';
+      state.storage.currentTradeLink = '';
+      state.tradeLinkEditing = true;
       await persist();
       render();
-      setStatus('Filter reset.');
+      setStatus('New profile started.');
     });
 
     root.document.getElementById('saveProfile').addEventListener('click', async () => {
-      const name = root.prompt('Save filter as:', state.storage.profiles.find((p) => p.id === state.storage.currentProfileId)?.name || '');
-      if (!name) return;
-      state.storage = store.saveProfile(state.storage, name, currentFilter());
-      await persist();
-      render();
-      setStatus(`Saved ${name}.`);
+      if (state.storage.currentProfileId) {
+        await saveCurrentProfileQuietly();
+      } else {
+        showProfileNamePanel('save');
+      }
     });
 
-    root.document.getElementById('loadProfile').addEventListener('click', async () => {
-      const profileId = root.document.getElementById('profileSelect').value;
-      state.storage = store.loadProfile(state.storage, profileId);
+    root.document.getElementById('cancelProfileName').addEventListener('click', () => {
+      setProfileNamePanelVisible(false);
+    });
+
+    root.document.getElementById('confirmProfileName').addEventListener('click', async () => {
+      const name = root.document.getElementById('profileNameInput').value.trim();
+      if (!name) {
+        setStatus('Profile name is required.');
+        return;
+      }
+
+      try {
+        if (state.profileNameMode === 'rename') {
+          state.storage = store.renameProfile(state.storage, state.storage.currentProfileId, name);
+          await persist();
+          setProfileNamePanelVisible(false);
+          render();
+          showToast('Profile renamed.');
+          setStatus(`Renamed to ${name}.`);
+          return;
+        }
+
+        state.storage = store.saveProfile(state.storage, name, currentFilter(), state.storage.currentTradeLink);
+        await persist();
+        setProfileNamePanelVisible(false);
+        render();
+        showToast('Profile saved.');
+        setStatus(`Saved ${name}.`);
+      } catch (error) {
+        setStatus(error.message);
+      }
+    });
+
+    root.document.getElementById('profileNameInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        root.document.getElementById('confirmProfileName').click();
+      }
+      if (event.key === 'Escape') {
+        setProfileNamePanelVisible(false);
+      }
+    });
+
+    root.document.getElementById('shareProfile').addEventListener('click', async () => {
+      try {
+        await writeClipboardText(store.exportProfileText(state.storage));
+        showToast('Profile copied to clipboard.');
+        setStatus('Profile copied to clipboard.');
+      } catch (error) {
+        setStatus(error.message);
+      }
+    });
+
+    root.document.getElementById('importProfile').addEventListener('click', () => {
+      setImportPanelVisible(true);
+    });
+
+    root.document.getElementById('cancelImportProfile').addEventListener('click', () => {
+      setImportPanelVisible(false);
+    });
+
+    root.document.getElementById('confirmImportProfile').addEventListener('click', async () => {
+      try {
+        state.storage = store.importProfileText(state.storage, root.document.getElementById('importProfileText').value);
+        state.tradeLinkEditing = !state.storage.currentTradeLink;
+        await persist();
+        root.document.getElementById('importProfileText').value = '';
+        setImportPanelVisible(false);
+        render();
+        root.document.getElementById('profileSelect').focus();
+        setStatus('Profile imported.');
+      } catch (error) {
+        setStatus(`Import failed: ${error.message}`);
+      }
+    });
+
+    root.document.getElementById('profileSelect').addEventListener('change', async (event) => {
+      const profileId = event.target.value;
+      if (profileId) {
+        state.storage = store.loadProfile(state.storage, profileId);
+      } else {
+        state.storage.currentProfileId = '';
+      }
+      state.tradeLinkEditing = !state.storage.currentTradeLink;
       await persist();
       render();
-      setStatus('Profile loaded.');
+      setStatus(profileId ? 'Profile loaded.' : 'No saved profile selected.');
+    });
+
+    root.document.getElementById('tradeLinkToggle').addEventListener('click', async () => {
+      if (!state.tradeLinkEditing && state.storage.currentTradeLink) {
+        state.tradeLinkEditing = true;
+        renderTradeLink();
+        root.document.getElementById('tradeLinkInput').focus();
+        root.document.getElementById('tradeLinkInput').select();
+        return;
+      }
+
+      const value = root.document.getElementById('tradeLinkInput').value;
+      state.storage = store.setCurrentTradeLink(state.storage, value);
+      state.tradeLinkEditing = !state.storage.currentTradeLink;
+      await persist();
+      render();
+      setStatus(
+        !state.storage.currentTradeLink
+          ? 'Trade link cleared.'
+          : store.isValidTradeLink(state.storage.currentTradeLink)
+            ? 'Trade link saved.'
+            : 'Trade link saved. Paste a valid POE2 trade link to make it clickable.',
+      );
+    });
+
+    root.document.getElementById('tradeLinkInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && state.tradeLinkEditing) {
+        event.preventDefault();
+        root.document.getElementById('tradeLinkToggle').click();
+      }
     });
 
     root.document.getElementById('renameProfile').addEventListener('click', async () => {
       if (!state.storage.currentProfileId) return;
-      const current = state.storage.profiles.find((profile) => profile.id === state.storage.currentProfileId);
-      const name = root.prompt('Rename profile:', current?.name || '');
-      if (!name) return;
-      state.storage = store.renameProfile(state.storage, state.storage.currentProfileId, name);
-      await persist();
-      render();
-      setStatus(`Renamed to ${name}.`);
+      showProfileNamePanel('rename');
     });
 
     root.document.getElementById('deleteProfile').addEventListener('click', async () => {
@@ -336,12 +558,14 @@
 
     root.document.getElementById('prevProfile').addEventListener('click', async () => {
       state.storage = store.navigateProfile(state.storage, -1);
+      state.tradeLinkEditing = !state.storage.currentTradeLink;
       await persist();
       render();
     });
 
     root.document.getElementById('nextProfile').addEventListener('click', async () => {
       state.storage = store.navigateProfile(state.storage, 1);
+      state.tradeLinkEditing = !state.storage.currentTradeLink;
       await persist();
       render();
     });

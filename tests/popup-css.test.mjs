@@ -26,3 +26,15 @@ test('popup grows with content until the viewport cap, then scrolls', async () =
   assert.match(groups, /align-content:\s*start;/);
   assert.doesNotMatch(groups, /overflow:\s*auto;/);
 });
+
+test('live toggle uses the primary action treatment', async () => {
+  const css = await readFile(new URL('../src/popup.css', import.meta.url), 'utf8');
+  const liveToggle = declarationBlock(css, '.live-toggle');
+  const liveToggleInput = declarationBlock(css, '.live-toggle input');
+
+  assert.match(liveToggle, /border:\s*1px solid #d6a229;/);
+  assert.match(liveToggle, /background:\s*#23262d;/);
+  assert.match(liveToggle, /color:\s*#d6a229;/);
+  assert.match(liveToggle, /min-height:\s*28px;/);
+  assert.match(liveToggleInput, /accent-color:\s*#d6a229;/);
+});

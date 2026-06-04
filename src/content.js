@@ -167,7 +167,7 @@
     };
   }
 
-  async function runFilterOnce() {
+  async function evaluateVisibleRows() {
     ensureStyles();
     await loadStoredState();
     const database = await loadDatabase();
@@ -210,7 +210,7 @@
   }
 
   async function startLiveFiltering() {
-    await runFilterOnce();
+    await evaluateVisibleRows();
     if (!root.MutationObserver || state.observer) {
       return state.lastStats;
     }
@@ -221,7 +221,7 @@
     }
 
     state.observer = new root.MutationObserver(() => {
-      runFilterOnce();
+      evaluateVisibleRows();
     });
     state.observer.observe(target, {
       childList: true,
@@ -248,10 +248,6 @@
     api.runtime.onMessage.addListener((message) => {
       if (!message || message.namespace !== MESSAGE_PREFIX) {
         return undefined;
-      }
-
-      if (message.type === 'run-once') {
-        return runFilterOnce();
       }
 
       if (message.type === 'set-live') {
@@ -282,7 +278,6 @@
     MESSAGE_PREFIX,
     applyStatus,
     classForEvaluation,
-    runFilterOnce,
     setLiveFiltering,
     statusForEvaluation,
     stopLiveFiltering,
