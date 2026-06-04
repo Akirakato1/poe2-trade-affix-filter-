@@ -28,6 +28,7 @@
         "src/shared/affix-text.js",
         "src/shared/rule-engine.js",
         "src/shared/trade-parser.js",
+        "src/shared/mod-options.js",
         "src/content.js"
       ],
       "run_at": "document_idle"

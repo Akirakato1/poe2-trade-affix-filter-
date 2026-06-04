@@ -84,7 +84,7 @@ label {
 .rule {
   display: grid;
   gap: 6px;
-  grid-template-columns: 84px 1fr 56px 56px 30px;
+  grid-template-columns: 74px 112px minmax(130px, 1fr) 50px 50px 30px;
 }
 
 .group-header {

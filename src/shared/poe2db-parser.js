@@ -162,11 +162,29 @@
       .filter(([, value]) => value.some((entry) => entry && entry.Name && entry.ModGenerationTypeID));
   }
 
+  function fallbackSectionLabel(section) {
+    if (section === 'normal') {
+      return 'Base';
+    }
+    return String(section || '')
+      .split(/[_-]+/g)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || 'Unknown';
+  }
+
+  function sectionLabel(payload, section) {
+    const configTitle = payload?.config?.[section]?.title;
+    const text = getAffixTextApi().stripHtml(configTitle || '');
+    return text || fallbackSectionLabel(section);
+  }
+
   function createAffixDataForPage(page, payload) {
     const affixes = [];
     let order = 0;
 
     for (const [section, entries] of arraySections(payload)) {
+      const currentSectionLabel = sectionLabel(payload, section);
       for (const entry of entries) {
         const generationType = normalizeGenerationType(entry.ModGenerationTypeID);
         if (generationType !== 'prefix' && generationType !== 'suffix') {
@@ -188,6 +206,7 @@
           families,
           level: Number(entry.Level || 0),
           section,
+          sectionLabel: currentSectionLabel,
           statText,
           statKey,
           tags: tagList(entry),
@@ -231,6 +250,7 @@
         family: groupAffixes[0].family,
         generationType: groupAffixes[0].generationType,
         section: groupAffixes[0].section,
+        sectionLabel: groupAffixes[0].sectionLabel,
         tags: [...new Set(groupAffixes.flatMap((affix) => affix.tags))].sort(),
         affixes: tiered,
       };
@@ -256,6 +276,7 @@
     extractModsViewPayload,
     parseModifierNavigation,
     plainStatText,
+    sectionLabel,
     slug,
   };
 

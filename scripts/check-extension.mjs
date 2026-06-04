@@ -8,6 +8,7 @@ const REQUIRED_FILES = [
   'src/popup.css',
   'src/popup.js',
   'src/shared/affix-text.js',
+  'src/shared/mod-options.js',
   'src/shared/poe2db-parser.js',
   'src/shared/profile-store.js',
   'src/shared/rule-engine.js',

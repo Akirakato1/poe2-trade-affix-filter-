@@ -72,6 +72,17 @@ test('createAffixDataForPage computes tier groups with T1 as highest required le
     url: 'https://poe2db.tw/us/Body_Armours_dex',
   };
   const payload = {
+    config: {
+      normal: {
+        title: 'Base',
+      },
+      essence: {
+        title: 'Essence',
+      },
+      soul: {
+        title: '<a href="Medveds_Tending">Medved&apos;s Tending</a>',
+      },
+    },
     normal: [
       {
         Name: "Shade's",
@@ -104,9 +115,41 @@ test('createAffixDataForPage computes tier groups with T1 as highest required le
   const evasionGroup = itemType.tierGroups.find((group) => group.family === 'DefencesPercent');
 
   assert.equal(itemType.affixes.length, 3);
+  assert.equal(evasionGroup.sectionLabel, 'Base');
   assert.deepEqual(evasionGroup.affixes.map((affix) => [affix.name, affix.tier]), [
     ["Mirage's", 1],
     ["Shade's", 2],
   ]);
   assert.equal(evasionGroup.generationType, 'prefix');
+});
+
+test('createAffixDataForPage uses PoE2DB config titles as mod type labels', () => {
+  const itemType = createAffixDataForPage(
+    {
+      group: 'Body Armours',
+      key: 'Body_Armours_dex',
+      label: 'Body Armours(dex)',
+      url: 'https://poe2db.tw/us/Body_Armours_dex',
+    },
+    {
+      config: {
+        soul: {
+          title: '<a href="Medveds_Tending">Medved&apos;s Tending</a>',
+        },
+      },
+      soul: [
+        {
+          Name: 'Numinous',
+          Level: '1',
+          ModGenerationTypeID: '1',
+          ModFamilyList: ['0'],
+          str: '+<span>10</span> to maximum Life',
+        },
+      ],
+    },
+  );
+
+  assert.equal(itemType.tierGroups[0].section, 'soul');
+  assert.equal(itemType.tierGroups[0].sectionLabel, "Medved's Tending");
+  assert.equal(itemType.affixes[0].sectionLabel, "Medved's Tending");
 });

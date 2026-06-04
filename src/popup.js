@@ -3,6 +3,7 @@
 
   const MESSAGE_PREFIX = 'poe2-affix-filter';
   const store = root.Poe2ProfileStore;
+  const modOptions = root.Poe2ModOptions;
   const state = {
     database: null,
     storage: store.normalizeState({}),
@@ -130,16 +131,16 @@
     ruleNode.className = 'rule';
     ruleNode.dataset.ruleId = rule.id;
     const tierGroups = tierGroupsForCurrentType();
-    const selectedGroup = tierGroups.find((group) => group.key === rule.tierGroupKey) || tierGroups[0];
-    const generationType = rule.generationType || selectedGroup?.generationType || 'prefix';
+    const selection = modOptions.resolveRuleSelection(rule, tierGroups);
+    const typeOptions = modOptions.modTypeOptionsForSide(tierGroups, selection.generationType);
+    const modEntries = modOptions.modOptionsForSelection(tierGroups, selection.generationType, selection.section);
 
     ruleNode.appendChild(selectNode('generation-type', [
       ['prefix', 'Prefix'],
       ['suffix', 'Suffix'],
-    ], generationType));
-    ruleNode.appendChild(selectNode('tier-group', tierGroups
-      .filter((group) => group.generationType === generationType)
-      .map((group) => [group.key, `${group.family}: ${group.label}`]), rule.tierGroupKey));
+    ], selection.generationType));
+    ruleNode.appendChild(selectNode('mod-section', typeOptions.map((entry) => [entry.value, entry.label]), selection.section));
+    ruleNode.appendChild(selectNode('tier-group', modEntries.map((entry) => [entry.value, entry.label]), selection.tierGroupKey));
     ruleNode.appendChild(numberNode('min-tier', rule.minTier || 1));
     ruleNode.appendChild(numberNode('max-tier', rule.maxTier || 1));
     const remove = root.document.createElement('button');
@@ -331,15 +332,34 @@
       }
 
       if (ruleNode && action === 'generation-type') {
-        const firstTierGroup = tierGroupsForCurrentType().find((group) => group.generationType === event.target.value);
+        const typeOptions = modOptions.modTypeOptionsForSide(tierGroupsForCurrentType(), event.target.value);
+        const section = typeOptions[0]?.value || '';
+        const firstTierGroup = modOptions.firstTierGroupForSelection(tierGroupsForCurrentType(), event.target.value, section);
         updateRule(groupNode.dataset.groupId, ruleNode.dataset.ruleId, {
           generationType: event.target.value,
+          section,
+          tierGroupKey: firstTierGroup?.key || '',
+        });
+      }
+
+      if (ruleNode && action === 'mod-section') {
+        const group = findGroup(currentFilter(), groupNode.dataset.groupId);
+        const rule = group?.rules?.find((candidate) => candidate.id === ruleNode.dataset.ruleId);
+        const generationType = rule?.generationType || 'prefix';
+        const firstTierGroup = modOptions.firstTierGroupForSelection(tierGroupsForCurrentType(), generationType, event.target.value);
+        updateRule(groupNode.dataset.groupId, ruleNode.dataset.ruleId, {
+          section: event.target.value,
           tierGroupKey: firstTierGroup?.key || '',
         });
       }
 
       if (ruleNode && action === 'tier-group') {
-        updateRule(groupNode.dataset.groupId, ruleNode.dataset.ruleId, { tierGroupKey: event.target.value });
+        const tierGroup = tierGroupsForCurrentType().find((group) => group.key === event.target.value);
+        updateRule(groupNode.dataset.groupId, ruleNode.dataset.ruleId, {
+          generationType: tierGroup?.generationType || 'prefix',
+          section: tierGroup?.section || '',
+          tierGroupKey: event.target.value,
+        });
       }
 
       if (ruleNode && action === 'min-tier') {
@@ -366,10 +386,11 @@
       if (action === 'add-rule') {
         mutateFilter((filter) => {
           const group = findGroup(filter, groupNode.dataset.groupId);
-          const firstTierGroup = tierGroupsForCurrentType()[0];
+          const firstTierGroup = modOptions.firstTierGroupForSelection(tierGroupsForCurrentType(), 'prefix');
           group.rules.push({
             id: id(),
             generationType: firstTierGroup?.generationType || 'prefix',
+            section: firstTierGroup?.section || '',
             tierGroupKey: firstTierGroup?.key || '',
             minTier: 1,
             maxTier: 1,
