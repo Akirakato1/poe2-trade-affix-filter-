@@ -70,12 +70,26 @@ test('group count controls render only for COUNT groups', () => {
   assert.equal(popup.groupCountControlsHtml({ type: 'and', min: 2, max: 4 }), '');
   assert.equal(popup.groupCountControlsHtml({ type: 'not', min: 2, max: 4 }), '');
 
+  const html = popup.groupCountControlsHtml({ type: 'count', count: 3 });
+
+  assert.match(html, /data-action="group-count"/);
+  assert.doesNotMatch(html, /data-action="group-min"/);
+  assert.doesNotMatch(html, /data-action="group-max"/);
+  assert.match(html, /value="3"/);
+});
+
+test('group count controls read legacy min as the current count', () => {
   const html = popup.groupCountControlsHtml({ type: 'count', min: 2, max: 4 });
 
-  assert.match(html, /data-action="group-min"/);
-  assert.match(html, /data-action="group-max"/);
+  assert.match(html, /data-action="group-count"/);
   assert.match(html, /value="2"/);
-  assert.match(html, /value="4"/);
+  assert.doesNotMatch(html, /value="4"/);
+});
+
+test('group headers expose their type for COUNT-specific layout', async () => {
+  const source = await readFile(new URL('../src/popup.js', import.meta.url), 'utf8');
+
+  assert.match(source, /data-group-type="\$\{group\.type\}"/);
 });
 
 test('shortcutLabelForCommand displays assigned and unset shortcuts', () => {

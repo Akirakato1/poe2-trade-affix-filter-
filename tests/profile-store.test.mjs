@@ -79,6 +79,39 @@ test('normalizeState preserves an unsaved working filter between popup opens', (
   assert.equal(state.currentTradeLink, 'https://www.pathofexile.com/trade2/search/poe2/Standard/abc123');
 });
 
+test('normalizeState migrates legacy count groups to a single count value', () => {
+  const legacyFilter = {
+    subtypeKey: 'Body_Armours_dex',
+    groups: [
+      {
+        id: 'group-1',
+        type: 'count',
+        min: 2,
+        max: 4,
+        rules: [],
+      },
+    ],
+  };
+  const state = normalizeState({
+    profiles: [
+      {
+        id: 'profile-1',
+        name: 'Legacy',
+        filter: legacyFilter,
+      },
+    ],
+    currentFilter: legacyFilter,
+  });
+
+  assert.deepEqual(state.currentFilter.groups[0], {
+    id: 'group-1',
+    type: 'count',
+    count: 2,
+    rules: [],
+  });
+  assert.deepEqual(state.profiles[0].filter.groups[0], state.currentFilter.groups[0]);
+});
+
 test('renameProfile changes the profile name without changing the filter', () => {
   const state = saveProfile({ profiles: [] }, 'Dex body', sampleFilter);
   const renamed = renameProfile(state, state.profiles[0].id, 'Fast dex body');

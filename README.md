@@ -46,9 +46,9 @@ The active filter is a global AND over one-level groups.
 
 - `AND`: every child mod rule must match.
 - `NOT`: every child mod rule must be false.
-- `COUNT(min,max)`: counts true child mod rules and passes when the count is within the inclusive range.
+- `COUNT(N)`: counts true child mod rules and passes when at least `N` rules match. If `N` is higher than the number of child rules, all child rules must match.
 
-There is no separate OR group. Use `COUNT(1, M)` for OR behavior.
+There is no separate OR group. Use `COUNT(1)` for OR behavior.
 
 Each child mod rule is boolean. A tier range expands to the allowed affix names for that mod family and item type. If the item has any allowed affix name, that rule contributes `1`; otherwise it contributes `0`.
 

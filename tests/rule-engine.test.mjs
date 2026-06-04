@@ -116,14 +116,13 @@ test('not groups pass only when every child rule is false', () => {
   assert.equal(evaluateFilter(filter, new Set(['of the Falcon']), database).passed, false);
 });
 
-test('count groups count boolean child rule matches within min and max', () => {
+test('count groups pass when the matched child rule count reaches the requested count', () => {
   const filter = {
     subtypeKey: 'Body_Armours_dex',
     groups: [
       {
         type: 'count',
-        min: 2,
-        max: 3,
+        count: 2,
         rules: [
           {
             tierGroupKey: 'normal:prefix:DefencesPercent:increased-evasion-rating',
@@ -146,7 +145,72 @@ test('count groups count boolean child rule matches within min and max', () => {
   };
 
   assert.equal(evaluateFilter(filter, new Set(["Mirage's", 'Rotund']), database).passed, true);
+  assert.equal(evaluateFilter(filter, new Set(["Mirage's", 'Rotund', 'of the Panther']), database).passed, true);
   assert.equal(evaluateFilter(filter, new Set(["Mirage's"]), database).passed, false);
+});
+
+test('count groups cap the requested count to the number of child rules', () => {
+  const filter = {
+    subtypeKey: 'Body_Armours_dex',
+    groups: [
+      {
+        type: 'count',
+        count: 5,
+        rules: [
+          {
+            tierGroupKey: 'normal:prefix:DefencesPercent:increased-evasion-rating',
+            minTier: 1,
+            maxTier: 2,
+          },
+          {
+            tierGroupKey: 'normal:prefix:IncreasedLife:maximum-life',
+            minTier: 1,
+            maxTier: 2,
+          },
+          {
+            tierGroupKey: 'normal:suffix:Dexterity:dexterity',
+            minTier: 1,
+            maxTier: 1,
+          },
+        ],
+      },
+    ],
+  };
+
+  assert.equal(evaluateFilter(filter, new Set(["Mirage's", 'Rotund']), database).passed, false);
+  assert.equal(evaluateFilter(filter, new Set(["Mirage's", 'Rotund', 'of the Panther']), database).passed, true);
+});
+
+test('count groups read legacy min values as the requested count', () => {
+  const filter = {
+    subtypeKey: 'Body_Armours_dex',
+    groups: [
+      {
+        type: 'count',
+        min: 2,
+        max: 2,
+        rules: [
+          {
+            tierGroupKey: 'normal:prefix:DefencesPercent:increased-evasion-rating',
+            minTier: 1,
+            maxTier: 2,
+          },
+          {
+            tierGroupKey: 'normal:prefix:IncreasedLife:maximum-life',
+            minTier: 1,
+            maxTier: 2,
+          },
+          {
+            tierGroupKey: 'normal:suffix:Dexterity:dexterity',
+            minTier: 1,
+            maxTier: 1,
+          },
+        ],
+      },
+    ],
+  };
+
+  assert.equal(evaluateFilter(filter, new Set(["Mirage's", 'Rotund', 'of the Panther']), database).passed, true);
 });
 
 test('a leaf rule contributes at most one count even if multiple allowed affix names are present', () => {
@@ -155,8 +219,7 @@ test('a leaf rule contributes at most one count even if multiple allowed affix n
     groups: [
       {
         type: 'count',
-        min: 1,
-        max: 1,
+        count: 1,
         rules: [
           {
             tierGroupKey: 'normal:prefix:DefencesPercent:increased-evasion-rating',

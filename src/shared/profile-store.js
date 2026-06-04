@@ -22,6 +22,30 @@
     };
   }
 
+  function normalizeFilter(filter) {
+    const next = filter ? clone(filter) : createEmptyFilter();
+    next.subtypeKey = String(next.subtypeKey || '');
+    next.groups = Array.isArray(next.groups) ? next.groups : [];
+
+    next.groups = next.groups.map((group) => {
+      const normalized = { ...group };
+      normalized.rules = Array.isArray(group?.rules) ? group.rules : [];
+
+      if (String(normalized.type || 'and').toLowerCase() === 'count') {
+        normalized.type = 'count';
+        normalized.count = Number(normalized.count ?? normalized.min ?? 1);
+      } else {
+        delete normalized.count;
+      }
+
+      delete normalized.min;
+      delete normalized.max;
+      return normalized;
+    });
+
+    return next;
+  }
+
   function normalizeTradeLink(value) {
     return String(value || '').trim();
   }
@@ -46,7 +70,7 @@
     return {
       id: String(profile?.id || ''),
       name: String(profile?.name || 'Unnamed profile').trim() || 'Unnamed profile',
-      filter: profile?.filter ? clone(profile.filter) : createEmptyFilter(),
+      filter: normalizeFilter(profile?.filter),
       tradeLink: normalizeTradeLink(profile?.tradeLink),
       updatedAt: String(profile?.updatedAt || ''),
     };
@@ -60,7 +84,7 @@
     return {
       profiles,
       currentProfileId,
-      currentFilter: state?.currentFilter ? clone(state.currentFilter) : createEmptyFilter(),
+      currentFilter: normalizeFilter(state?.currentFilter),
       currentTradeLink: normalizeTradeLink(hasCurrentTradeLink ? state.currentTradeLink : currentProfile?.tradeLink),
       liveEnabled: Boolean(state?.liveEnabled),
     };
@@ -105,7 +129,7 @@
     const profile = {
       id: existing?.id || profileIdForName(profileName, next.profiles),
       name: profileName,
-      filter: clone(filter || next.currentFilter || createEmptyFilter()),
+      filter: normalizeFilter(filter || next.currentFilter),
       tradeLink: normalizeTradeLink(arguments.length >= 4 ? tradeLink : next.currentTradeLink),
       updatedAt: new Date().toISOString(),
     };
@@ -228,7 +252,7 @@
       version: 1,
       name: currentProfile?.name || 'Unsaved filter',
       tradeLink: next.currentTradeLink,
-      filter: clone(next.currentFilter || createEmptyFilter()),
+      filter: normalizeFilter(next.currentFilter),
     };
     return `${SHARE_PREFIX}${base64UrlEncode(JSON.stringify(payload))}`;
   }
@@ -247,7 +271,7 @@
     return {
       name: String(payload.name || 'Imported profile').trim() || 'Imported profile',
       tradeLink: normalizeTradeLink(payload.tradeLink),
-      filter: clone(payload.filter),
+      filter: normalizeFilter(payload.filter),
     };
   }
 

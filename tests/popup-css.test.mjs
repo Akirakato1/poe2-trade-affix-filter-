@@ -43,6 +43,13 @@ test('group headers do not reserve count columns for AND and NOT groups', async 
   const css = await readFile(new URL('../src/popup.css', import.meta.url), 'utf8');
   const groupHeader = declarationBlock(css, '.group-header');
 
-  assert.match(groupHeader, /display:\s*flex;/);
-  assert.doesNotMatch(groupHeader, /grid-template-columns:/);
+  assert.match(groupHeader, /display:\s*grid;/);
+  assert.match(groupHeader, /grid-template-columns:\s*80px minmax\(86px,\s*1fr\) 30px;/);
+});
+
+test('count group headers use a compact single-count grid', async () => {
+  const css = await readFile(new URL('../src/popup.css', import.meta.url), 'utf8');
+  const countHeader = declarationBlock(css, '.group-header[data-group-type="count"]');
+
+  assert.match(countHeader, /grid-template-columns:\s*80px 48px 1fr 30px;/);
 });

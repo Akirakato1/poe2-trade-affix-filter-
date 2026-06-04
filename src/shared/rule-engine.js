@@ -111,10 +111,10 @@
 
     if (type === 'count') {
       const matchedCount = matches.filter(Boolean).length;
-      const min = Number(group.min || 0);
-      const max = Number(group.max ?? rules.length);
+      const requestedCount = Number(group.count ?? group.min ?? 0);
+      const requiredCount = Math.min(requestedCount, rules.length);
       return {
-        passed: matchedCount >= min && matchedCount <= max,
+        passed: matchedCount >= requiredCount,
         matchedCount,
         matches,
       };

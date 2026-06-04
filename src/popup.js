@@ -253,8 +253,7 @@
     }
 
     return `
-          <input data-action="group-min" type="number" min="0" value="${Number(group.min ?? 1)}" title="Count min">
-          <input data-action="group-max" type="number" min="0" value="${Number(group.max ?? 1)}" title="Count max">`;
+          <input data-action="group-count" type="number" min="0" value="${Number(group.count ?? group.min ?? 1)}" title="Required count">`;
   }
 
   function renderGroups() {
@@ -275,7 +274,7 @@
       groupNode.className = 'group';
       groupNode.dataset.groupId = group.id;
       groupNode.innerHTML = `
-        <div class="group-header">
+        <div class="group-header" data-group-type="${group.type}">
           <select data-action="group-type">
             <option value="and">AND</option>
             <option value="not">NOT</option>
@@ -362,8 +361,7 @@
       filter.groups.push({
         id: id(),
         type,
-        min: type === 'count' ? 1 : undefined,
-        max: type === 'count' ? 1 : undefined,
+        count: type === 'count' ? 1 : undefined,
         rules: [],
       });
     });
@@ -604,22 +602,21 @@
       const action = event.target.dataset.action;
       if (!groupNode || !action) return;
 
-      if (action === 'group-type' || action === 'group-min' || action === 'group-max') {
+      if (action === 'group-type' || action === 'group-count') {
         mutateFilter((filter) => {
           const group = findGroup(filter, groupNode.dataset.groupId);
           if (!group) return;
           if (action === 'group-type') {
             group.type = event.target.value;
             if (group.type === 'count') {
-              group.min = Number(group.min ?? 1);
-              group.max = Number(group.max ?? 1);
+              group.count = Number(group.count ?? group.min ?? 1);
             } else {
-              delete group.min;
-              delete group.max;
+              delete group.count;
             }
+            delete group.min;
+            delete group.max;
           }
-          if (action === 'group-min') group.min = Number(event.target.value);
-          if (action === 'group-max') group.max = Number(event.target.value);
+          if (action === 'group-count') group.count = Number(event.target.value);
         });
       }
 
